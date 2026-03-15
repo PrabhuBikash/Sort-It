@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Sort it!</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="ui-toolbar">
+  <button class="toolbar-btn" id="help-button" onclick="openModal('helpModal')" title="Help">?</button>
+  <button class="toolbar-btn" id="edit-button" onclick="openModal('editModal')" Title="Design">✎</button>
+  <button class="toolbar-btn" id="share-button" onclick="openModal('shareModal')" title="Share">⤴</button>
+  <button class="toolbar-btn" id="control-button" onclick="toggleControls()" title="controls">👁</button>
+  <button class="toolbar-btn" id="win-button" onclick="showWinModal()" title="Pause">⏸</button>
+</div>
+
+
+  <pre><span id="info"></span>    <span id="move-count"></span></pre>
+  <div id="game"></div>
+  <div class="feedback" id="feedback"></div>
+
+
+  <div id="controls">
+    <button class="ui-button" onclick="move('left')" title="Move left">←</button>
+    <button class="ui-button" onclick="render(true)" id="connect-button" title="Merge">🔗</button>
+    <button class="ui-button" onclick="move('right')" title="Move right">→</button>
+  </div>
+  
+  <div id="winModal" class="modal">
+    <div class="modal-content">
+      <span id="pause-btn" class="close-btn" onclick="closeModal('winModal')">×</span>
+      <div><h2 id="stars"></h2>
+      <p>Current Mode: <span id="mode"></span> mode</p></div>
+  
+      <div><p>Choose mode for next game:</p>
+      <div class="mode-grid">
+        <label class="mode-toggle"><input type="checkbox" data-mode="freeStart"/>freeStart</label>
+        <label class="mode-toggle"><input type="checkbox" data-mode="manualMerge"/>manualMerge</label>
+        <label class="mode-toggle"><input type="checkbox" data-mode="memory"/>memory</label>
+        <label class="mode-toggle"><input type="checkbox" data-mode="chaos"/>chaos</label>
+      </div></div>
+      <div class="edit-actions">
+        <button id="restart-button" onclick="restartGame()">Restart</button>
+        <button id="play-button">Play new game</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="helpModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeModal('helpModal')">x</span>
+      <h2>🧠 How to play?</h2>
+      <p>You start as an element in a list — your goal? Sort it!</p>
+      <pre style="font-size: xx-large;">
+  targetList = [2,5,3,4,1]
+  levelList = [3,4,1,<span>5</span>,2]
+      </pre>
+      <p>You move left ⬅️ (Left Arrowkey) or right ➡️ (Left Arrowkey), collecting boxes as you go. Use merge 🔗 (Space key) when needed. Try to match the target.</p>
+  
+      <h2>🎯 Example Gameplay</h2>
+      <pre style="font-size: xx-large;">
+    [3,4,5,<span>2</span>,1] 
+  → [3,4,5,<span>1,2</span>] 
+  ← [3,4,<span>1,2</span>,5] 
+  ← [3,<span>1,2</span>,4,5] 
+  ← [<span>1,2,3,4,5</span>]
+  YOU WON!
+      </pre>
+      <h2>🎮 Game Modes</h2>
+      <ul>
+        <li><b>freeStart</b> - You Choose where to start. In other modes It's random.</li>
+        <li><b>manualMerge</b> - You decide when to merge. So use the power carefully. In other modes it merges after every move.</li>
+        <li><b>memory</b> - After your first move, the target and unsorted boxes hide. Only your sorted boxes stay visible.</li>
+        <li><b>chaos</b> - You don't sort in ascending order anymore. The goal is a chaotic mess (random List).</li>
+      </ul>
+  
+      <h2>⭐ Star System</h2>
+      <p>
+        ⭐ - If you won!<br>
+        ⭐ - If it's not manualMerge and you did it in less than optimal+3 steps<br>
+        (or) - If it's manualMerge and you did it in optimal merges<br>
+        ⭐ - If you did it in optimal steps
+      </p>
+  
+      <h2>🛠️ Level Designer</h2>
+      <p>Want to share a message in a cool way you can do that too. (Just don't make it too long it might make it booring!)</p>
+      <pre style="font-size: xx-large;">targetList = [I, ,L,O,V,E, ,Y,O,U]
+
+    [Y,<span>O</span>, ,E,V,I,L, ,U,O] 
+  → [Y, ,<span>O</span>,E,V,I,L, ,U,O]
+  → [Y, ,E,<span>O</span>,V,I,L, ,U,O]
+  → [Y, ,E,V,<span>O</span>,I,L, ,U,O]
+  → [Y, ,E,V,I,<span>O</span>,L, ,U,O]
+  ← [Y, ,E,V,<span>L,O</span>,I, ,U,O]
+  ← [Y, ,E,<span>L,O,V</span>,I, ,U,O]
+  ← [Y,<span> ,L,O,V,E</span>,I, ,U,O] 
+  → [Y,<span>I, ,L,O,V,E</span>, ,U,O] 
+  ← [<span>I, ,L,O,V,E, ,Y</span>,U,O] 
+  → [U,<span>I, ,L,O,V,E, ,Y,O</span>] 
+  ← [<span>I, ,L,O,V,E, ,Y,O,U</span>] 
+  YOU WON!
+      </pre>
+      <p><strong>Hey, but you want to reveal this message slowly as they solve not as target right?</strong>
+      <br>- You can do that too! just when you make the level, select 'Hide Target'.
+      <br> we also encode the level data in the link so that the message is not revealed so early.
+      <br>(it's not an privacy encryption!)
+      <br>
+      <br><strong>why did that 1st 'O' didn't match with 'Y' when there is 'YO' in 'I LOVE YOU'?</strong>
+      <br>- because it's 1st 'O' and 1st 'O' is in 'LOVE' not 'YOU'.
+      <br>
+      <br><strong>What's the problem what 'O' is it?</strong>
+      <br>- Suppose it was [Y,<span>O</span>,V, ,...]
+      <br>what should we do? [<span>Y,O</span>,V, ,...] or [Y,<span>O,V</span>, ,...]
+      <br>
+      <br><strong>Fun fact</strong>: internally you still sort a list in ascending order!
+      <br>and we index 1st 'O' same as the 1st 'O' in the target and same for all characters
+      <br>
+      <br><strong>but that might make it confusing!</strong>
+      <br>You can on the 'Show Index Hinting' option when you make a level to see if the charcter is at the index where it should finally be (any way you now understand how it works)</p>
+  
+      <h2>🎉 That’s it</h2>
+      <p>Now go make, share, and solve levels. Or better — hide a secret.</p>
+    </div>
+  </div>
+  
+  
+  
+  
+  <div id="editModal" class="modal">
+    <div class="modal-content edit-layout">
+      <span class="close-btn" onclick="closeModal('editModal')">×</span>
+      <div class="preview">
+        <h2>Level Preview</h2>
+        <pre><span id="preview-info"></span></pre>
+        <div id="preview-initial" class="box-row"></div>
+      </div>
+  
+      <div class="settings" oninput="updatePreview()">
+        <label>Target State:<input type="text" id="edit-target" placeholder="e.g. 0,1,2,3,4"></label>
+        <label>Initial State:<input type="text" id="edit-initial" placeholder="e.g. 3,1,4,0,2"></label>
+        <label>Start from:<input type="number" min="0" id="edit-start" placeholder="put index (starts from 0) not value, leave it blank if you want to make it freeStart"></label>
+  
+        <div class="mode-grid">
+          <label class="mode-toggle"><input type="checkbox" id="edit-manual"> Manual Merge</label>
+          <label class="mode-toggle"><input type="checkbox" id="edit-memory"> Memory Mode</label>
+          <label class="mode-toggle"><input type="checkbox" id="edit-hide-goal"> Hide Target</label>
+          <label class="mode-toggle"><input type="checkbox" id="edit-show-indices"> Show Index Hinting</label>
+        </div>
+  
+        <div id="edit-error" class="error-text"></div>
+  
+        <div class="edit-actions"><button id="createGame-button" style="display: none;">Create Game</button></div>
+      </div>
+  
+    </div>
+  </div>
+  
+
+  <div id="shareModal" class="modal">
+    <div class="modal-content">
+      <span id="shareModal-CloseBtn" class="close-btn" onclick="closeModal('shareModal')">×</span>
+      <h2>🔗 Share this level:</h2>
+      <div class="share-row">
+        <input id="share-link" readonly>
+        <button id="copy-btn" onclick="copyShareLink()">Copy</button>
+      </div>
+    </div>
+  </div>
+  
+  
+  
+
+  <script src="functions.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
